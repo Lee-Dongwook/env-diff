@@ -1,0 +1,21 @@
+{
+  "name": "env-diff",
+  "version": "0.1.0",
+  "description": "Compare local and CI environments",
+  "bin": {
+    "envdiff": "./bin/envdiff.cjs"
+  },
+  "files": [
+    "bin/",
+    "vendor/bin/"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Lee-Dongwook",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
