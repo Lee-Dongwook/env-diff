@@ -1,8 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+
+	"github.com/Lee-Dongwook/env-diff/internal/snapshot"
 )
 
 func main() {
@@ -20,8 +23,7 @@ func run(args []string) error {
 
 	switch args[0] {
 	case "capture":
-		fmt.Println("capture command")
-		return nil
+		return capture(args[1:])
 	case "diff":
 		fmt.Println("diff command")
 		return nil
@@ -29,6 +31,29 @@ func run(args []string) error {
 		printUsage()
 		return fmt.Errorf("unknown command %q", args[0])
 	}
+}
+
+func capture(args []string) error {
+	flags := flag.NewFlagSet("capture", flag.ContinueOnError)
+	output := flags.String("out", "envdiff-snapshot.json", "output snapshot file")
+
+	if err:= flags.Parse(args); err != nil {
+		return err
+	}
+
+	if flags.NArg() != 0 {
+		return fmt.Errorf("unexpected arguments: %v", flags.Args())
+	}
+
+	result := snapshot.Capture()
+	if err := snapshot.Write(*output, result); err != nil {
+		return fmt.Errorf("write snapshot: %w", err)
+	}
+
+
+	fmt.Printf("Environment snapshot saved to %s\n", *output)
+	fmt.Printf("Recorded %d environment variables (values are not stored)\n", len(result.Environment))
+	return nil
 }
 
 func printUsage() {
