@@ -38,6 +38,11 @@ func Capture() Snapshot {
 		if !ok {
 			continue
 		}
+
+		if shouldIgnoreEnvironmentVariable(name) {
+			continue
+		}
+
 		values[name] = value
 	}
 
@@ -129,4 +134,26 @@ func captureToolchains() []ToolVersion {
 	})
 
 	return versions
+}
+
+func shouldIgnoreEnvironmentVariable(name string) bool {
+	upperName := strings.ToUpper(name)
+
+	if upperName == "CI" {
+		return true
+	}
+
+	ignoredPrefixes := []string{
+		"GITHUB_",
+		"ACTIONS_",
+		"RUNNER_",
+	}
+
+	for _, prefix := range ignoredPrefixes {
+		if strings.HasPrefix(upperName, prefix) {
+			return true
+		}
+	}
+
+	return false
 }
