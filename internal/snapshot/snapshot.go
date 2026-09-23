@@ -30,7 +30,7 @@ type Environment struct {
 	Empty bool   `json:"empty"`
 }
 
-func Capture() Snapshot {
+func Capture(excludePrefixes ...string) Snapshot {
 	values := make(map[string]string)
 
 	for _, entry := range os.Environ() {
@@ -39,7 +39,7 @@ func Capture() Snapshot {
 			continue
 		}
 
-		if shouldIgnoreEnvironmentVariable(name) {
+		if shouldIgnoreEnvironmentVariable(name, excludePrefixes) {
 			continue
 		}
 
@@ -136,7 +136,7 @@ func captureToolchains() []ToolVersion {
 	return versions
 }
 
-func shouldIgnoreEnvironmentVariable(name string) bool {
+func shouldIgnoreEnvironmentVariable(name string, excludePrefixes []string) bool {
 	upperName := strings.ToUpper(name)
 
 	if upperName == "CI" {
@@ -151,6 +151,13 @@ func shouldIgnoreEnvironmentVariable(name string) bool {
 
 	for _, prefix := range ignoredPrefixes {
 		if strings.HasPrefix(upperName, prefix) {
+			return true
+		}
+	}
+
+	for _, prefix := range excludePrefixes {
+		prefix = strings.ToUpper(strings.TrimSpace(prefix))
+		if prefix != "" && strings.HasPrefix(upperName, prefix) {
 			return true
 		}
 	}

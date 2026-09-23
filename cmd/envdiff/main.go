@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Lee-Dongwook/env-diff/internal/compare"
 	"github.com/Lee-Dongwook/env-diff/internal/snapshot"
@@ -36,6 +37,7 @@ func run(args []string) error {
 func capture(args []string) error {
 	flags := flag.NewFlagSet("capture", flag.ContinueOnError)
 	output := flags.String("out", "envdiff-snapshot.json", "output snapshot file")
+	excludePrefix := flags.String("exclude-prefix", "", "comma-separated environment variable prefixes to exclude",)
 
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -44,7 +46,7 @@ func capture(args []string) error {
 		return fmt.Errorf("unexpected arguments: %v", flags.Args())
 	}
 
-	result := snapshot.Capture()
+	result := snapshot.Capture(parsePrefixes(*excludePrefix)...)
 	if err := snapshot.Write(*output, result); err != nil {
 		return fmt.Errorf("write snapshot: %w", err)
 	}
@@ -58,22 +60,30 @@ func capture(args []string) error {
 }
 
 func diffSnapshots(args []string) error {
-	if len(args) != 2 {
+	flags := flag.NewFlagSet("diff", flag.ContinueOnError)
+	failOnDiff := flags.Bool("fail-on-diff", false, "exit with an error when differences are found")
+
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+
+	files := flags.Args()
+	if len(files) != 2 {
 		return fmt.Errorf("diff requires two snapshot files")
 	}
 
-	left, err := snapshot.Read(args[0])
+	left, err := snapshot.Read(files[0])
 	if err != nil {
-		return fmt.Errorf("read %s: %w", args[0], err)
+		return fmt.Errorf("read %s: %w", files[0], err)
 	}
 
-	right, err := snapshot.Read(args[1])
+	right, err := snapshot.Read(files[1])
 	if err != nil {
-		return fmt.Errorf("read %s: %w", args[1], err)
+		return fmt.Errorf("read %s: %w",files[1], err)
 	}
 
 	result := compare.Diff(left, right)
-	fmt.Printf("Comparing %s -> %s\n", args[0], args[1])
+	fmt.Printf("Comparing %s -> %s\n", files[0], files[1])
 
 	hasDifferences := false
 
@@ -107,7 +117,27 @@ func diffSnapshots(args []string) error {
 		fmt.Println("No differences detected.")
 	}
 
+	if hasDifferences && *failOnDiff {
+		return fmt.Errorf("differences detected")
+	}
+
 	return nil
+}
+
+func parsePrefixes(value string) []string {
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+
+	var prefixes []string
+	for _, prefix := range strings.Split(value,  ",") {
+		prefix = strings.TrimSpace(prefix)
+		if prefix != "" {
+			prefixes = append(prefixes, prefix)
+		}
+	}
+
+	return prefixes
 }
 
 func printUsage() {
@@ -116,6 +146,7 @@ func printUsage() {
 Usage:
   envdiff capture --out <file>
   envdiff diff <local-snapshot> <ci-snapshot>
+  envdiff diff [--fail-on-diff] <local-snapshot> <ci-snapshot>
 
 Commands:
   capture  Capture the current environment

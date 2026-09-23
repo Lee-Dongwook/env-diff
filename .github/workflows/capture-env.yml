@@ -20,7 +20,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Capture environment
-        run: go run ./cmd/envdiff capture --out ci.envdiff.json
+        run: go run ./cmd/envdiff capture --out ci.envdiff.json --exclude-prefix CMUX_,VSCODE_,HOMEBREW_,NVM_
 
       - name: Upload snapshot
         uses: actions/upload-artifact@v4
