@@ -1,19 +1,25 @@
-# env-diff
+# Runtime Env Report
 
-Compare the development environment on your machine with the one used in CI.
+Compare your local development environment with the one used in CI.
 
-`env-diff` captures OS, architecture, toolchain versions, and environment variable names. It does not store environment variable values.
+`runtime-env-report` captures OS, architecture, toolchain versions, and environment variable names. It does not store environment variable values.
 
 ## Install
 
 ```bash
-npm install --save-dev env-diff
+npm install --save-dev runtime-env-report
 ```
 
-Or run it without installing:
+After installation, run the CLI as `envdiff`:
 
 ```bash
-npx env-diff --help
+npx envdiff --help
+```
+
+To try it without adding it to your project:
+
+```bash
+npx --yes --package=runtime-env-report envdiff --help
 ```
 
 ## Usage
@@ -24,11 +30,11 @@ Capture your local environment:
 npx envdiff capture --out local.envdiff.json
 ```
 
-Capture the CI environment by adding this step to your workflow:
+Capture the CI environment:
 
 ```yaml
 - name: Capture CI environment
-  run: npx envdiff capture --out ci.envdiff.json
+  run: npx --yes --package=runtime-env-report envdiff capture --out ci.envdiff.json
 ```
 
 Compare the snapshots:
@@ -37,7 +43,7 @@ Compare the snapshots:
 npx envdiff diff local.envdiff.json ci.envdiff.json
 ```
 
-To make the command exit with an error when differences are found:
+Make the command exit with an error when differences are found:
 
 ```bash
 npx envdiff diff --fail-on-diff local.envdiff.json ci.envdiff.json
@@ -47,13 +53,13 @@ npx envdiff diff --fail-on-diff local.envdiff.json ci.envdiff.json
 
 The npm package includes prebuilt binaries for:
 
-- macOS: x64, arm64
-- Linux: x64, arm64
-- Windows: x64, arm64
+- macOS: x64 and arm64
+- Linux: x64 and arm64
+- Windows: x64 and arm64
 
 ## Privacy
 
-Snapshot files contain environment variable names and whether their values are empty. They do not contain the values themselves. Review the snapshot before sharing it, since variable names can still reveal information about your setup.
+Snapshot files contain environment variable names and whether their values are empty. They do not contain environment variable values. Variable names can still reveal information about your setup, so review snapshots before sharing them.
 
 ## License
 

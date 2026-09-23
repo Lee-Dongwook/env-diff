@@ -1,5 +1,5 @@
 {
-  "name": "env-diff",
+  "name": "runtime-env-report",
   "version": "0.1.0",
   "description": "Compare local and CI environments",
   "bin": {
