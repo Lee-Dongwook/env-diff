@@ -1,8 +1,10 @@
 package snapshot
 
 import (
+	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"runtime"
 	"sort"
 	"strings"
@@ -14,8 +16,13 @@ type Snapshot struct {
 	CapturedAt    time.Time     `json:"capturedAt"`
 	OS            string        `json:"os"`
 	Architecture  string        `json:"architecture"`
-	GoVersion     string        `json:"goVersion"`
+	Toolchains    []ToolVersion `json:"toolchains"`
 	Environment   []Environment `json:"environment"`
+}
+
+type ToolVersion struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 type Environment struct {
@@ -46,12 +53,14 @@ func Capture() Snapshot {
 		return environment[i].Name < environment[j].Name
 	})
 
+	toolchains := captureToolchains()
+
 	return Snapshot{
 		SchemaVersion: 1,
 		CapturedAt:    time.Now().UTC(),
 		OS:            runtime.GOOS,
 		Architecture:  runtime.GOARCH,
-		GoVersion:     runtime.Version(),
+		Toolchains:    toolchains,
 		Environment:   environment,
 	}
 }
@@ -81,4 +90,43 @@ func Read(path string) (Snapshot, error) {
 	}
 
 	return result, nil
+}
+
+func captureToolchains() []ToolVersion {
+	probes := []struct {
+		name string
+		args []string
+	}{
+		{name: "node", args: []string{"--version"}},
+		{name: "npm", args: []string{"--version"}},
+		{name: "go", args: []string{"version"}},
+		{name: "python3", args: []string{"--version"}},
+	}
+
+	var versions []ToolVersion
+
+	for _, probe := range probes {
+		path, err := exec.LookPath(probe.name)
+		if err != nil {
+			continue
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		output, err := exec.CommandContext(ctx, path, probe.args...).Output()
+		cancel()
+		if err != nil {
+			continue
+		}
+
+		versions = append(versions, ToolVersion{
+			Name:    probe.name,
+			Version: strings.TrimSpace(string(output)),
+		})
+	}
+
+	sort.Slice(versions, func(i, j int) bool {
+		return versions[i].Name < versions[j].Name
+	})
+
+	return versions
 }

@@ -37,10 +37,9 @@ func capture(args []string) error {
 	flags := flag.NewFlagSet("capture", flag.ContinueOnError)
 	output := flags.String("out", "envdiff-snapshot.json", "output snapshot file")
 
-	if err:= flags.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		return err
 	}
-
 	if flags.NArg() != 0 {
 		return fmt.Errorf("unexpected arguments: %v", flags.Args())
 	}
@@ -50,9 +49,11 @@ func capture(args []string) error {
 		return fmt.Errorf("write snapshot: %w", err)
 	}
 
-
 	fmt.Printf("Environment snapshot saved to %s\n", *output)
-	fmt.Printf("Recorded %d environment variables (values are not stored)\n", len(result.Environment))
+	fmt.Printf("Recorded %d environment variables and %d toolchains (values are not stored)\n",
+		len(result.Environment),
+		len(result.Toolchains),
+	)
 	return nil
 }
 
@@ -73,6 +74,7 @@ func diffSnapshots(args []string) error {
 
 	result := compare.Diff(left, right)
 	fmt.Printf("Comparing %s -> %s\n", args[0], args[1])
+
 	hasDifferences := false
 
 	if left.OS != right.OS {
@@ -83,11 +85,11 @@ func diffSnapshots(args []string) error {
 		fmt.Printf("Architecture: %s -> %s\n", left.Architecture, right.Architecture)
 		hasDifferences = true
 	}
-	if left.GoVersion != right.GoVersion {
-		fmt.Printf("Go version: %s -> %s\n", left.GoVersion, right.GoVersion)
+
+	for _, change := range result.ToolchainChanges {
+		fmt.Printf("%s: %s -> %s\n", change.Name, change.Left, change.Right)
 		hasDifferences = true
 	}
-
 	for _, name := range result.Added {
 		fmt.Printf("+ Environment variable only in right: %s\n", name)
 		hasDifferences = true
