@@ -1,8 +1,18 @@
-# EnvDiff generated snapshots
+# EnvDiff snapshots
 *.envdiff.json
 
-# Local environment files
-.env
-.env.*
-!.env.example
-!.env.*.example
+# Compiled Go binaries
+/envdiff
+/envdiff.exe
+
+# Generated platform binaries, bundled when packing the npm package
+/npm/vendor/bin/
+
+# npm package tarballs
+/npm/*.tgz
+
+# Temporary npm installation test project
+/tmp-envdiff-test/
+
+# Node dependencies
+node_modules/
