@@ -10,12 +10,12 @@ import (
 )
 
 type Snapshot struct {
-	SchemaVersion int  			`json:"schemaVersion"`
-	CapturedAt 	  time.Time		`json:"capturedAt"`
-	OS			  string		`json:"os"`
-	Architecture  string		`json:"architecture"`
-	GoVersion	  string		`json:"goVersion"`
-	Environment	  []Environment	`json:"environment"`
+	SchemaVersion int           `json:"schemaVersion"`
+	CapturedAt    time.Time     `json:"capturedAt"`
+	OS            string        `json:"os"`
+	Architecture  string        `json:"architecture"`
+	GoVersion     string        `json:"goVersion"`
+	Environment   []Environment `json:"environment"`
 }
 
 type Environment struct {
@@ -37,7 +37,7 @@ func Capture() Snapshot {
 	environment := make([]Environment, 0, len(values))
 	for name, value := range values {
 		environment = append(environment, Environment{
-			Name: name,
+			Name:  name,
 			Empty: value == "",
 		})
 	}
@@ -48,11 +48,11 @@ func Capture() Snapshot {
 
 	return Snapshot{
 		SchemaVersion: 1,
-		CapturedAt: time.Now().UTC(),
-		OS: runtime.GOOS,
-		Architecture: runtime.GOARCH,
-		GoVersion: runtime.Version(),
-		Environment: environment,
+		CapturedAt:    time.Now().UTC(),
+		OS:            runtime.GOOS,
+		Architecture:  runtime.GOARCH,
+		GoVersion:     runtime.Version(),
+		Environment:   environment,
 	}
 }
 
@@ -66,4 +66,19 @@ func Write(path string, snapshot Snapshot) error {
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(snapshot)
+}
+
+func Read(path string) (Snapshot, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return Snapshot{}, err
+	}
+	defer file.Close()
+
+	var result Snapshot
+	if err := json.NewDecoder(file).Decode(&result); err != nil {
+		return Snapshot{}, err
+	}
+
+	return result, nil
 }
